@@ -1,0 +1,11 @@
+# Nix reads inline ''…'' build scripts literally — CRLF breaks them with
+# `$'\r': command not found`. Keep build-critical and source files LF.
+*.rs    text eol=lf
+*.nix   text eol=lf
+*.toml  text eol=lf
+*.lock  text eol=lf
+*.sh    text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.json  text eol=lf
+*.md    text eol=lf
