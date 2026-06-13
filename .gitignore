@@ -1,0 +1,6 @@
+# Rust build output
+/target
+
+# Nix build symlinks
+result
+result-*

@@ -1,0 +1,31 @@
+documentation:
+  - changed-files:
+    - any-glob-to-any-file: '**/*.md'
+
+feature:
+  - head-branch: ['^feature', 'feature']
+
+release:
+  - all:
+    - base-branch: 'master'
+    - head-branch: ['^release', 'release']
+
+rust:
+  - changed-files:
+    - any-glob-to-any-file:
+        - 'src/**/*.rs'
+        - 'Cargo.toml'
+        - 'Cargo.lock'
+
+nix:
+  - changed-files:
+    - any-glob-to-any-file:
+        - 'flake.nix'
+        - 'flake.lock'
+
+ci:
+  - changed-files:
+    - any-glob-to-any-file:
+        - '.github/workflows/**'
+        - '.github/dependabot.yml'
+        - '.github/labeler.yml'
