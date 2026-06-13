@@ -1,0 +1,121 @@
+name: Build
+
+# Per-arch native build of the init via Nix. On pushes/PRs it's a smoke build;
+# on a release tag (cut by release.yml) it attaches portable Linux binaries to
+# the GitHub Release.
+#
+# The init is Linux-only (fork + openpty + signalfd + PID-1 reaping), so the
+# matrix is just x86_64 + aarch64 on native runners — no cross, no emulation.
+
+on:
+  push:
+    branches: [master]
+    tags: ['*.*.*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write # attach assets to the release on tag builds
+  id-token: write # provenance attestation
+  attestations: write
+
+jobs:
+  build:
+    name: Build (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+            nix_system: x86_64-linux
+            interpreter: /lib64/ld-linux-x86-64.so.2
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+            nix_system: aarch64-linux
+            interpreter: /lib/ld-linux-aarch64.so.1
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            accept-flake-config = true
+
+      - name: Cache Nix store
+        uses: nix-community/cache-nix-action@v7
+        with:
+          primary-key: nix-${{ runner.os }}-${{ matrix.arch }}-${{ hashFiles('**/flake.lock', '**/Cargo.lock', '**/flake.nix') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-${{ matrix.arch }}-
+          gc-max-store-size-linux: 5G
+          purge: true
+          purge-prefixes: nix-${{ runner.os }}-${{ matrix.arch }}-
+          purge-created: 0
+          purge-last-accessed: P7D
+          purge-primary-key: never
+
+      - name: Build with Nix
+        run: |
+          # glibc-dynamic (what the docker image uses) and fully-static musl.
+          nix build --print-build-logs ".#packages.${{ matrix.nix_system }}.default" -o result-glibc
+          nix build --print-build-logs ".#packages.${{ matrix.nix_system }}.mc-server-init-static" -o result-musl
+
+      - name: Assemble release binaries
+        env:
+          ARCH: ${{ matrix.arch }}
+          INTERP: ${{ matrix.interpreter }}
+        run: |
+          set -euo pipefail
+          # glibc: a nix binary hardcodes the /nix/store ELF interpreter + rpath.
+          # Repoint to the system loader and drop the rpath so it runs on any host
+          # providing the glibc symbols it actually uses (only GLIBC_2.34).
+          install -m755 result-glibc/bin/mc-server-init "mc-server-init-linux-${ARCH}"
+          nix run nixpkgs#patchelf -- --set-interpreter "$INTERP" --remove-rpath "mc-server-init-linux-${ARCH}"
+          # musl: fully static, no interpreter — copy as-is. Runs on Alpine etc.
+          install -m755 result-musl/bin/mc-server-init "mc-server-init-linux-${ARCH}-musl"
+
+      - name: Smoke test
+        env:
+          ARCH: ${{ matrix.arch }}
+        run: |
+          # GitHub runs this step as `bash -e`; capture the (expected non-zero)
+          # exit code inside an `if` so errexit doesn't abort the script — `if`
+          # conditions are exempt from `set -e`.
+          for asset in "mc-server-init-linux-${ARCH}" "mc-server-init-linux-${ARCH}-musl"; do
+            echo "== $asset =="
+            if out=$(./"$asset" 2>&1); then code=0; else code=$?; fi
+            echo "$out"
+            # With no program argument clap prints a usage error and exits 2.
+            test "$code" = 2 || { echo "::error::$asset: unexpected exit $code"; exit 1; }
+            echo "$out" | grep -qi "usage" || { echo "::error::$asset: no usage output"; exit 1; }
+          done
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: |
+            mc-server-init-linux-${{ matrix.arch }}
+            mc-server-init-linux-${{ matrix.arch }}-musl
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: mc-server-init-linux-${{ matrix.arch }}
+          path: |
+            mc-server-init-linux-${{ matrix.arch }}
+            mc-server-init-linux-${{ matrix.arch }}-musl
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Attach binaries to the release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARCH: ${{ matrix.arch }}
+        run: gh release upload "${GITHUB_REF_NAME}" "mc-server-init-linux-${ARCH}" "mc-server-init-linux-${ARCH}-musl" --clobber

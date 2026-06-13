@@ -1,0 +1,25 @@
+[package]
+name = "mc-server-init"
+version = "0.1.0"
+edition = "2021"
+description = "Tiny PID-1 init for Minecraft server containers (Spigot/Paper/…): PTY-backed console, named-pipe injection, SIGTERM/SIGINT/Ctrl+C -> graceful stop."
+license = "MIT"
+
+[[bin]]
+name = "mc-server-init"
+path = "src/main.rs"
+
+[dependencies]
+# nix gives us openpty (the `term` feature also gates the pty module), signalfd,
+# poll, waitpid and fork/exec; it re-exports libc for the raw
+# read/write/ioctl/mkfifo/termios calls in the event loop.
+nix = { version = "0.31", features = ["term", "poll", "signal", "process"] }
+# clap parses the CLI declaratively (gives --help/--version + validation free).
+clap = { version = "4", features = ["derive"] }
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"

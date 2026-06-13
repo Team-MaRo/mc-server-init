@@ -1,0 +1,64 @@
+name: Release
+
+# Conventional-commits → release PR → tagged release. release-please scans
+# commits since the last release on master, opens (or updates) a "release" PR
+# with the version bump (Cargo.toml + Cargo.lock via the `rust` release-type,
+# and flake.nix via the `x-release-please-version` marker) + CHANGELOG.md, and
+# on merge cuts a GitHub Release + git tag. The tag push fires build.yml (which
+# triggers on `tags: ['*.*.*']`) to build the per-arch binaries and attach them
+# to the release.
+#
+# Config: release-please-config.json + .release-please-manifest.json.
+
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      # Non-empty JSON when release-please created or updated a release PR
+      # this run. Used by `reattribute` below to decide whether to amend.
+      pr: ${{ steps.release.outputs.pr }}
+    steps:
+      - name: Create release PR / GitHub Release
+        id: release
+        uses: googleapis/release-please-action@v5
+        with:
+          # PAT instead of GITHUB_TOKEN: GitHub suppresses workflow triggers for
+          # tags created via GITHUB_TOKEN, which would prevent build.yml from
+          # firing on the release tag to attach the binaries.
+          token: ${{ secrets.GH_PAT }}
+
+  # release-please-action commits the release PR's contents as the PAT owner.
+  # Re-attribute to github-actions[bot] so the PR shows the bot as author.
+  reattribute:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.pr != '' }}
+    runs-on: ubuntu-latest
+    env:
+      PR_BRANCH: ${{ fromJSON(needs.release-please.outputs.pr).headBranchName }}
+    steps:
+      - name: Checkout release-please branch
+        uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GH_PAT }}
+          ref: ${{ env.PR_BRANCH }}
+          fetch-depth: 2
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Amend release commit as github-actions[bot]
+        run: |
+          set -euo pipefail
+          git commit --amend --reset-author --no-edit
+          git push origin "$PR_BRANCH" --force-with-lease
