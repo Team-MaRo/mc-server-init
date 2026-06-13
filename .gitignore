@@ -1,0 +1,9 @@
+# Rust build output
+/target
+
+# Nix build symlinks
+result
+result-*
+
+# Claude Code entrypoint — just points at AGENTS.md (the tracked source of truth)
+CLAUDE.md
