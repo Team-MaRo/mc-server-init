@@ -14,6 +14,7 @@ updates:
       - "dependabot :robot:"
     schedule:
       interval: weekly
+      day: monday # required: weekly does NOT default to Monday (GitHub keeps a random slot — here Saturday). Do not remove.
       time: '09:30'
       timezone: Europe/Zurich
     groups:
@@ -28,6 +29,7 @@ updates:
       - "dependabot :robot:"
     schedule:
       interval: weekly
+      day: monday
       time: '09:30'
       timezone: Europe/Zurich
     groups:
@@ -43,6 +45,7 @@ updates:
       - "dependabot :robot:"
     schedule:
       interval: weekly
+      day: monday
       time: '09:30'
       timezone: Europe/Zurich
     # Only one flake input (nixpkgs) today; group anyway so any future inputs
