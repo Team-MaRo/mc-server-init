@@ -1,6 +1,6 @@
 [package]
 name = "mc-server-init"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "Tiny PID-1 init for Minecraft server containers (Spigot/Paper/…): PTY-backed console, named-pipe injection, SIGTERM/SIGINT/Ctrl+C -> graceful stop."
 license = "MIT"
