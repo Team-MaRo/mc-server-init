@@ -46,7 +46,7 @@ jobs:
       PR_BRANCH: ${{ fromJSON(needs.release-please.outputs.pr).headBranchName }}
     steps:
       - name: Checkout release-please branch
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           token: ${{ secrets.GH_PAT }}
           ref: ${{ env.PR_BRANCH }}
