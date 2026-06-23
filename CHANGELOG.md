@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2](https://github.com/Team-MaRo/mc-server-init/compare/0.1.1...0.1.2) (2026-06-23)
+
+
+### 🐛 Bug Fixes
+
+* **ci:** group dependabot updates by ecosystem and harden release flow ([a5152be](https://github.com/Team-MaRo/mc-server-init/commit/a5152bedcc14be42e9014d033b376eed9b6a3ce8))
+
 ## [0.1.1](https://github.com/Team-MaRo/mc-server-init/compare/0.1.0...0.1.1) (2026-06-20)
 
 
