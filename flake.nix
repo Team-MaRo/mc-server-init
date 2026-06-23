@@ -13,7 +13,7 @@
       forAllSystems = f: nixpkgs.lib.genAttrs systems
         (system: f (import nixpkgs { inherit system; }));
 
-      version = "0.1.1"; # x-release-please-version
+      version = "0.1.2"; # x-release-please-version
     in
     {
       packages = forAllSystems (pkgs:
