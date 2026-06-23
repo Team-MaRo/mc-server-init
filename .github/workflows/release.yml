@@ -7,8 +7,6 @@ name: Release
 # on merge cuts a GitHub Release + git tag. The tag push fires build.yml (which
 # triggers on `tags: ['*.*.*']`) to build the per-arch binaries and attach them
 # to the release.
-#
-# Config: release-please-config.json + .release-please-manifest.json.
 
 on:
   push:
@@ -31,6 +29,8 @@ jobs:
         id: release
         uses: googleapis/release-please-action@v5
         with:
+          config-file: .github/release-please-config.json
+          manifest-file: .github/release-please-manifest.json
           # PAT instead of GITHUB_TOKEN: GitHub suppresses workflow triggers for
           # tags created via GITHUB_TOKEN, which would prevent build.yml from
           # firing on the release tag to attach the binaries.

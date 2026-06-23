@@ -96,7 +96,7 @@ releases attach:
 ## Releases
 
 Conventional commits → release-please (`release-type: rust`, configured in
-`release-please-config.json` + `.release-please-manifest.json`) opens a release PR
+`.github/release-please-config.json` + `.github/release-please-manifest.json`) opens a release PR
 bumping `Cargo.toml`/`Cargo.lock` and `flake.nix` (the `x-release-please-version`
 marker). Merging cuts a tag + GitHub Release; the tag fires `build.yml` to attach
 the binaries. Needs the `GH_PAT` secret and "Allow Actions to create PRs".
