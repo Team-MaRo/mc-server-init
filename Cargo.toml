@@ -13,7 +13,7 @@ path = "src/main.rs"
 # nix gives us openpty (the `term` feature also gates the pty module), signalfd,
 # poll, waitpid and fork/exec; it re-exports libc for the raw
 # read/write/ioctl/mkfifo/termios calls in the event loop.
-nix = { version = "0.31", features = ["term", "poll", "signal", "process"] }
+nix = { version = "0.32", features = ["term", "poll", "signal", "process"] }
 # clap parses the CLI declaratively (gives --help/--version + validation free).
 clap = { version = "4", features = ["derive"] }
 
